@@ -1,0 +1,10 @@
+*.key
+*.pub
+*.lst
+docs.json
+.dub
+dub.selections.json
+libvibe-rpcchannel.a
+libvibe-rpcchannel_noise.a
+vibe-rpcchannel-noise-test-library
+vibe-rpcchannel-test-library

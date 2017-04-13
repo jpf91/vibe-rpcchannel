@@ -17,7 +17,8 @@ import std.stdio;
 /**
  *
  */
-RPCClient!(API, ConnectionInfo) createClientSession(API, ConnectionInfo)(Stream stream, ConnectionInfo info)
+RPCClient!(API, ConnectionInfo) createClientSession(API, ConnectionInfo)(
+    Stream stream, ConnectionInfo info)
 {
     auto client = new RPCClient!(API, ConnectionInfo)(stream, info);
     return client;
@@ -26,35 +27,37 @@ RPCClient!(API, ConnectionInfo) createClientSession(API, ConnectionInfo)(Stream 
 string generateMethods(API)()
 {
     import std.conv : to;
+
     string result;
 
     foreach (member; __traits(derivedMembers, API))
     {
         // Guards against private members
-        static if(__traits(compiles, __traits(getMember, API, member)))
+        static if (__traits(compiles, __traits(getMember, API, member)))
         {
-            static if(isSomeFunction!(__traits(getMember, API, member))
-                && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
-                && !isSpecialFunction!member)
+            static if (isSomeFunction!(__traits(getMember, API, member))
+                    && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
+                    && !isSpecialFunction!member)
             {
                 alias overloads = MemberFunctionsTuple!(API, member);
 
-                foreach(MethodType; overloads)
+                foreach (MethodType; overloads)
                 {
                     alias TParams = Parameters!MethodType;
                     alias TRet = ReturnType!MethodType;
                     enum mangle = typeof(MethodType).mangleof;
 
                     string code = "override " ~ TRet.stringof ~ " " ~ member ~ "(";
-                    foreach(i, param; TParams)
+                    foreach (i, param; TParams)
                     {
-                        if(i != 0)
+                        if (i != 0)
                             code ~= ", ";
                         code ~= param.stringof ~ " t" ~ to!string(i);
                     }
                     code ~= ")\n{\n";
-                    string call = "callMethod!(" ~ TRet.stringof ~ " function" ~ TParams.stringof ~ ")(\"" ~ member ~ "\", \"" ~ mangle ~ "\"";
-                    foreach(i, param; TParams)
+                    string call = "callMethod!(" ~ TRet.stringof ~ " function"
+                        ~ TParams.stringof ~ ")(\"" ~ member ~ "\", \"" ~ mangle ~ "\"";
+                    foreach (i, param; TParams)
                     {
                         call ~= ", t" ~ to!string(i);
                     }
@@ -91,7 +94,7 @@ unittest
 
 template modName(T)
 {
-    static if(__traits(compiles, moduleName!T))
+    static if (__traits(compiles, moduleName!T))
         enum modName = moduleName!T;
     else
         enum modName = "";
@@ -105,28 +108,28 @@ string generateImports(API)()
     foreach (member; __traits(derivedMembers, API))
     {
         // Guards against private members
-        static if(__traits(compiles, __traits(getMember, API, member)))
+        static if (__traits(compiles, __traits(getMember, API, member)))
         {
-            static if(isSomeFunction!(__traits(getMember, API, member))
-                && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
-                && !isSpecialFunction!member)
+            static if (isSomeFunction!(__traits(getMember, API, member))
+                    && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
+                    && !isSpecialFunction!member)
             {
                 alias overloads = MemberFunctionsTuple!(API, member);
 
-                foreach(MethodType; overloads)
+                foreach (MethodType; overloads)
                 {
                     alias TParams = Parameters!MethodType;
                     alias TRet = ReturnType!MethodType;
                     modules[modName!TRet] = 1;
 
-                    foreach(Param; TParams)
+                    foreach (Param; TParams)
                         modules[modName!Param] = 1;
                 }
             }
         }
     }
 
-    foreach(mod; modules.keys)
+    foreach (mod; modules.keys)
     {
         if (mod.length)
             result ~= "import " ~ mod ~ ";\n";
@@ -140,7 +143,10 @@ string generateImports(API)()
 // we mixin the code for some real tests in test.d ;-)
 unittest
 {
-    struct S {}
+    struct S
+    {
+    }
+
     static abstract class TestAPI
     {
         S foo();
@@ -216,7 +222,7 @@ private:
      * We were somehow disconnected. Clean up all tasks and notify waiting
      * calls by throwing Exceptions.
      */
-    void shutdown () nothrow
+    void shutdown() nothrow
     {
         _pending.exception = true;
         collectException(_pending.emitReady());
@@ -227,23 +233,23 @@ private:
             collectException(onDisconnect.emit(this));
         }
 
-        if(Task.getThis != _readTask)
+        if (Task.getThis != _readTask)
             collectException(_readTask.interrupt());
     }
 
     /*
      *
      */
-    ReturnType!MethodType callMethod(MethodType)(string name, string mangle, Parameters!MethodType args)
+    ReturnType!MethodType callMethod(MethodType)(string name, string mangle,
+        Parameters!MethodType args)
     {
         assert(Task.getThis != _readTask, "Can not call remote methods from event handler task");
         // Make sure there can't be multiple pending calls
-        synchronized(_requestMutex)
+        synchronized (_requestMutex)
         {
-            scope(exit)
+            scope (exit)
                 finishRead();
             enforceEx!DisconnectedException(connected);
-
 
             alias TParams = Parameters!MethodType;
             alias TRet = ReturnType!MethodType;
@@ -251,12 +257,12 @@ private:
 
             // TODO: Do we have to handle disconnected exceptions?
             // Send request
-            synchronized(_writeMutex)
+            synchronized (_writeMutex)
             {
                 _stream.serializeToJsonLine(RequestType.call);
                 auto msg = CallMessage(msgID, name, mangle, TParams.length);
                 _stream.serializeToJsonLine(msg);
-                foreach(arg; args)
+                foreach (arg; args)
                     _stream.serializeToJsonLine(arg);
                 _stream.flush();
             }
@@ -268,42 +274,42 @@ private:
             if (_pending.exception)
                 throw new DisconnectedException();
 
-            switch(_pending.type)
+            switch (_pending.type)
             {
-                case ResponseType.error:
-                    ErrorMessage info;
-                    try
-                        info = _stream.deserializeJsonLine!ErrorMessage();
-                    catch(Exception e)
-                    {
-                        shutdown();
-                        throw e;
-                    }
-                    throw new RPCException(/*info.type, */info.message, info.file, info.line);
-                case ResponseType.result:
-                    ResultMessage info;
-                    try
-                        info = _stream.deserializeJsonLine!ResultMessage();
-                    catch(Exception e)
-                    {
-                        shutdown();
-                        throw e;
-                    }
+            case ResponseType.error:
+                ErrorMessage info;
+                try
+                    info = _stream.deserializeJsonLine!ErrorMessage();
+                catch (Exception e)
+                {
+                    shutdown();
+                    throw e;
+                }
+                throw new RPCException( /*info.type, */ info.message, info.file, info.line);
+            case ResponseType.result:
+                ResultMessage info;
+                try
+                    info = _stream.deserializeJsonLine!ResultMessage();
+                catch (Exception e)
+                {
+                    shutdown();
+                    throw e;
+                }
 
-                    // Exceptions here caused by deserialization failure of the result are recoverable
-                    static if(is(TRet == void))
-                    {
-                        // Discard result
-                        if (info.hasResult)
-                            _stream.deserializeJsonLine!void();
-                        break;
-                    }
-                    else
-                    {
-                        return _stream.deserializeJsonLine!TRet();
-                    }
-                default:
-                    assert(false);
+                // Exceptions here caused by deserialization failure of the result are recoverable
+                static if (is(TRet == void))
+                {
+                    // Discard result
+                    if (info.hasResult)
+                        _stream.deserializeJsonLine!void();
+                    break;
+                }
+                else
+                {
+                    return _stream.deserializeJsonLine!TRet();
+                }
+            default:
+                assert(false);
             }
         }
     }
@@ -319,7 +325,7 @@ private:
         size_t parametersRead = 0;
         try
         {
-            foreach(i, Arg; TArgs)
+            foreach (i, Arg; TArgs)
             {
                 parametersRead++;
                 args[i] = _stream.deserializeJsonLine!Arg();
@@ -334,7 +340,7 @@ private:
 
     void handleEventMessage()
     {
-        scope(exit)
+        scope (exit)
             finishRead();
 
         auto event = _stream.deserializeJsonLine!EventMessage();
@@ -342,17 +348,17 @@ private:
         foreach (member; __traits(derivedMembers, API))
         {
             // Guards against private members
-            static if(__traits(compiles, __traits(getMember, API, member)))
+            static if (__traits(compiles, __traits(getMember, API, member)))
             {
-                static if(isEmittable2!(typeof(__traits(getMember, API, member))) &&
-                     !hasUDA!(__traits(getMember, API, member), IgnoreUDA))
+                static if (isEmittable2!(typeof(__traits(getMember, API,
+                        member))) && !hasUDA!(__traits(getMember, API, member), IgnoreUDA))
                 {
-                    alias EventType = ElementType!(typeof(__traits(getMember, API, member)));
+                    alias EventType = ElementType!(typeof(__traits(getMember, API,
+                        member)));
                     alias TRet = ReturnType!EventType;
                     alias TArgs = Parameters!EventType;
 
-                    if (event.target == member && event.parameters ==
-                        Parameters!(EventType).length)
+                    if (event.target == member && event.parameters == Parameters!(EventType).length)
                     {
                         emitEvent!member(event);
                         return;
@@ -369,7 +375,7 @@ private:
     {
         try
         {
-            while(true)
+            while (true)
             {
                 // If another task is busy processing a message
                 if (_processingRead)
@@ -379,22 +385,22 @@ private:
                 startRead();
 
                 const type = _stream.deserializeJsonLine!ResponseType();
-                switch(type)
+                switch (type)
                 {
-                    case ResponseType.disconnect:
-                        shutdown();
-                        return;
-                    case ResponseType.error:
-                        goto case;
-                    case ResponseType.result:
-                        _pending.type = type;
-                        _pending.emitReady();
-                        break;
-                    case ResponseType.event:
-                        handleEventMessage();
-                        break;
-                    default:
-                        throw new Exception("Invalid response type");
+                case ResponseType.disconnect:
+                    shutdown();
+                    return;
+                case ResponseType.error:
+                    goto case;
+                case ResponseType.result:
+                    _pending.type = type;
+                    _pending.emitReady();
+                    break;
+                case ResponseType.event:
+                    handleEventMessage();
+                    break;
+                default:
+                    throw new Exception("Invalid response type");
                 }
             }
         }
@@ -402,7 +408,7 @@ private:
         {
             // OK, terminate
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             shutdown();
         }
@@ -459,7 +465,7 @@ public:
         if (!connected)
             return;
 
-        synchronized(_writeMutex)
+        synchronized (_writeMutex)
         {
             _stream.serializeToJsonLine(RequestType.disconnect);
             _stream.flush();

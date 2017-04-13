@@ -1,0 +1,11 @@
+{
+    "name": "noise",
+    "dependencies": {
+        "vibe-d": "~>0.7.30",
+        "eventsystem": "~>1.2.0",
+        "vibe-noisestream": "~>0.1.1",
+        "vibe-rpcchannel": "~>0.1.1"
+    },
+    "targetType": "library",
+    "description": "Noise transport for RPC library"
+}

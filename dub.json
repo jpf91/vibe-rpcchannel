@@ -1,0 +1,17 @@
+{
+    "name": "vibe-rpcchannel",
+    "authors": [
+        "Johannes Pfau"
+    ],
+    "dependencies": {
+        "vibe-d": "~>0.7.30",
+        "eventsystem": "~>1.2.0"
+    },
+    "subPackages": [
+        "./noise"
+    ],
+    "targetType": "library",
+    "description": "A vibe.d RPC library based on TCP connections",
+    "copyright": "Copyright © 2017, Johannes Pfau",
+    "license": "BSL"
+}

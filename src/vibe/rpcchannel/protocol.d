@@ -79,19 +79,19 @@ struct EventMessage
     uint parameters;
 }
 
-
 /*
  * 
  */
 T deserializeJsonLine(T)(InputStream stream)
 {
     import vibe.stream.operations;
+
     // TODO: Avoid GC
-    auto line = cast(string)stream.readLine();
+    auto line = cast(string) stream.readLine(size_t.max, "\n");
 
     enforceEx!RPCException(line.length != 0);
 
-    static if(!is(T == void))
+    static if (!is(T == void))
         return deserializeJson!T(line);
 }
 
@@ -102,21 +102,5 @@ void serializeToJsonLine(T)(OutputStream stream, T value)
 {
     auto str = serializeToJsonString(value);
     stream.write(str);
-    stream.write("\r\n");
+    stream.write("\n");
 }
-
-/+
-// TODO: This is probably slow
-struct WrapperRange
-{
-    OutputStream stream;
-
-    void put(ubyte value)
-    {
-        stream.write([value]);
-    }
-    void put(string value)
-    {
-        stream.write(cast(ubyte[])value);
-    }
-}+/
