@@ -23,6 +23,5 @@ popd
 
 dub test -b unittest-cov --combined
 dub test ":noise" -b unittest-cov --combined
-rm src-noise.lst
 chmod +x ./doveralls
 ./doveralls
