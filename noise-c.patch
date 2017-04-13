@@ -1,0 +1,23 @@
+diff --git a/src/protocol/internal.c b/src/protocol/internal.c
+index 28e97e6..58e33d6 100644
+--- a/src/protocol/internal.c
++++ b/src/protocol/internal.c
+@@ -28,8 +28,6 @@ NoiseCipherState *noise_aesgcm_new_sodium(void);
+ #endif
+ #if USE_OPENSSL
+ NoiseCipherState *noise_aesgcm_new_openssl(void);
+-#else
+-NoiseCipherState *noise_aesgcm_new_ref(void);
+ #endif
+ 
+ /**
+@@ -47,9 +45,6 @@ NoiseCipherState *noise_aesgcm_new(void)
+ #if USE_OPENSSL
+     if (!state)
+         state = noise_aesgcm_new_openssl();
+-#else
+-    if (!state)
+-        state = noise_aesgcm_new_ref();
+ #endif
+ 
+     return state;
