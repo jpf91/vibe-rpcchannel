@@ -16,7 +16,7 @@ Features
 --------
 * Events allow for server->client communication callbacks
 * Overloading for functions
-* API enabled easy management of sessions and authentication
+* API enables easy management of sessions and authentication
 * API is flexible enough to allow for _reverse mode_: The machine connecting
   to a remote machine can be the RPC server. This is useful for NATed machines.
 
