@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Module vibe.rpcchannel.client</title><link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/><link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/><script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET"><input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">vibe</div><ul class="tree-view"><li class="tree-view "><div class="package "><a href="../../vibe/rpcchannel.html">rpcchannel</a></div><ul class="tree-view"><li><div class="module "><a href="../../vibe/rpcchannel/base.html">base</a></div></li><li><div class="module selected"><a href="../../vibe/rpcchannel/client.html">client</a></div></li><li><div class="module "><a href="../../vibe/rpcchannel/noise.html">noise</a></div></li><li><div class="module "><a href="../../vibe/rpcchannel/protocol.html">protocol</a></div></li><li><div class="module "><a href="../../vibe/rpcchannel/server.html">server</a></div></li><li><div class="module "><a href="../../vibe/rpcchannel/tcp.html">tcp</a></div></li></ul></li></ul></li></ul></nav><div id="main-contents"><h1>Module vibe.rpcchannel.client</h1><p>Contains the RPC client API.
+</p>
+<section></section>
+<section><section><h2>Note</h2>
+<p>This interface is decoupled from the underlying transport stream and
+ therefore requires manually creating these streams. Higher level interfaces
+ for common stream implementations are available in vibe.rpcchannel.tcp and
+ vibe.rpcchannel.noise.
+</p>
+</section>
+<section><h2>Synopsis</h2>
+<pre class="code"><code class="lang-d"><span class="kwd">abstract class </span><span class="pln">API
+</span><span class="pun">{
+    </span><span class="typ">void </span><span class="pln">callMethos</span><span class="pun">();
+    </span><span class="typ">Event</span><span class="pun">!() </span><span class="pln">onEvent</span><span class="pun">;
+}
+
+</span><span class="kwd">auto </span><span class="pln">stream </span><span class="pun">= </span><span class="pln">connectTCP</span><span class="pun">(</span><span class="str">"127.0.0.1"</span><span class="pun">, </span><span class="lit">8080</span><span class="pun">);
+</span><span class="kwd">auto </span><span class="pln">client </span><span class="pun">= <a href="../../vibe/rpcchannel/client/createClientSession.html"></span><span class="pln">createClientSession</span></a><span class="pun">!(</span><span class="pln">API</span><span class="pun">, </span><span class="typ">TCPConnection</span><span class="pun">)(</span><span class="pln">stream</span><span class="pun">, </span><span class="pln">stream</span><span class="pun">);
+
+</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">callMethod</span><span class="pun">();
+</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">onEvent </span><span class="pun">~= () {};
+</span><span class="pln">client<wbr/></span><span class="pun">.</span><span class="pln">disconnect</span><span class="pun">();
+</span><span class="pln">stream<wbr/></span><span class="pun">.</span><span class="pln">close</span><span class="pun">();</span></code></pre>
+</section>
+</section><section><h2>Functions</h2><table><col class="caption"/><tr><th>Name</th><th>Description</th></tr><tr><td><code><a id="createClientSession" class="["public"]" href="../../vibe/rpcchannel/client/createClientSession.html">createClientSession</a><span class="decoration">(stream, info)</span></code></td><td>Create a new RPCClient implementing API.
+</td></tr></table></section><section><h2>Classes</h2><table><col class="caption"/><tr><th>Name</th><th>Description</th></tr><tr><td><code><a id="RPCClient" class="["public"]" href="../../vibe/rpcchannel/client/RPCClient.html">RPCClient</a></code></td><td>This implements an RPC client for API.
+</td></tr></table></section><footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>

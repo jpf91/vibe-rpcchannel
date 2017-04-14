@@ -1,0 +1,31 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Class RPCClient</title><link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/><link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/><script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script></head><body onload="setupDdox();"><nav id="main-nav"><noscript><p style="color: red">The search functionality needs JavaScript enabled</p></noscript><div id="symbolSearchPane" style="display: none"><form action="#" method="GET"><input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/></form><ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tree-view "><div class="package ">vibe</div><ul class="tree-view"><li class="tree-view "><div class="package "><a href="../../../vibe/rpcchannel.html">rpcchannel</a></div><ul class="tree-view"><li><div class="module "><a href="../../../vibe/rpcchannel/base.html">base</a></div></li><li><div class="module selected"><a href="../../../vibe/rpcchannel/client.html">client</a></div></li><li><div class="module "><a href="../../../vibe/rpcchannel/noise.html">noise</a></div></li><li><div class="module "><a href="../../../vibe/rpcchannel/protocol.html">protocol</a></div></li><li><div class="module "><a href="../../../vibe/rpcchannel/server.html">server</a></div></li><li><div class="module "><a href="../../../vibe/rpcchannel/tcp.html">tcp</a></div></li></ul></li></ul></li></ul></nav><div id="main-contents"><h1>Class RPCClient</h1><p>This implements an RPC client for API.
+</p><div class="prototype"><code class="lang-d"><div class="single-prototype">
+<span class="kwd">class</span> <span class="typ">RPCClient</span>(API, ConnectionInfo)<span class="pun">;</span></div></code></div>
+<section><p>The ConnectionInfo type is used to present information about the underlying
+ connection to the user. To do this, RPCClient exposes the connectionInfo
+ field of type ConnectionInfo.
+</p>
+
+<p> The client overrides all functions and events in API not marked with a
+ IgnoreUDA attribute. It additionally provides an onDisconnect method which
+ gets called when the connection gets disconnected locally or by the server.
+</p>
+
+<p> The disconnect method can be used to close the connection. The underlying
+ stream still has to get closed manually.
+</p>
+</section>
+<section><h2>Fields</h2><h4>Fields</h4><table><col class="caption"/><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td><a href="../../../vibe/rpcchannel/client/RPCClient.connectionInfo.html" class="["public"]"><code>connectionInfo</code></a></td><td class="typecol"><code class="prettyprint lang-d"><span class="typ">ConnectionInfo</span></code></td><td>Connection info passed in to createClientSession.
+</td></tr><tr><td><a href="../../../vibe/rpcchannel/client/RPCClient.onDisconnect.html" class="["public"]"><code>onDisconnect</code></a></td><td class="typecol"><code class="prettyprint lang-d"><span class="typ">Event</span>!(RPCClient!(API,ConnectionInfo))</code></td><td>Called when disconnected.
+</td></tr></table></section><section><h2>Properties</h2><h4>Properties</h4><table><col class="caption"/><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td><a href="../../../vibe/rpcchannel/client/RPCClient.connected.html" class="["public", "property"]"><code>connected</code></a><span class="tableEntryAnnotation">[get]</span></td><td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether client session is still connected.
+</td></tr></table></section><section><h2>Methods</h2><h4>Methods</h4><table><col class="caption"/><tr><th>Name</th><th>Description</th></tr><tr><td><a href="../../../vibe/rpcchannel/client/RPCClient.disconnect.html" class="["public"]"><code>disconnect</code></a></td><td>Sends disconnect signal to remote server and stops internal tasks.
+</td></tr></table></section>
+<section><h2>Note</h2>
+<p>Event handlers are called from the Task processing the results of calls.
+ Because of this, event handlers may not directly call RPC methods. If you
+ need to call a RPC method from an event handler, spawn a new Task using runTask
+ first.
+</p>
+</section>
+<footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>
