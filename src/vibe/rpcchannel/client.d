@@ -1,3 +1,29 @@
+/**
+ * Contains the RPC client API.
+ *  
+ * Note:
+ * This interface is decoupled from the underlying transport stream and
+ * therefore requires manually creating these streams. Higher level interfaces
+ * for common stream implementations are available in vibe.rpcchannel.tcp and
+ * vibe.rpcchannel.noise.
+ *
+ * Synopsis:
+ * --------
+ * abstract class API
+ * {
+ *     void callMethos();
+ *     Event!() onEvent;
+ * }
+ *
+ * auto stream = connectTCP("127.0.0.1", 8080);
+ * auto client = createClientSession!(API, TCPConnection)(stream, stream);
+ * 
+ * client.callMethod();
+ * client.onEvent ~= () {};
+ * client.disconnect();
+ * stream.close();
+ * --------
+ */
 module vibe.rpcchannel.client;
 
 import std.traits;
@@ -15,7 +41,16 @@ import vibe.rpcchannel.protocol;
 import std.stdio;
 
 /**
+ * Create a new RPCClient implementing API.
  *
+ * The info parameter is available as the connectionInfo parameter of
+ * the returned client object.
+ *
+ * Example:
+ * -----
+ * auto client = createClientSession!(API, string)(stream, "Hello");
+ * assert(client.connectionInfo == "hello");
+ * -----
  */
 RPCClient!(API, ConnectionInfo) createClientSession(API, ConnectionInfo)(
     Stream stream, ConnectionInfo info)
@@ -24,7 +59,11 @@ RPCClient!(API, ConnectionInfo) createClientSession(API, ConnectionInfo)(
     return client;
 }
 
-string generateMethods(API)()
+/*
+ * Generate string to mixin to override API methods. Simply
+ * forwards to the callMethod template.
+ */
+private string generateMethods(API)()
 {
     import std.conv : to;
 
@@ -77,9 +116,11 @@ string generateMethods(API)()
     return result;
 }
 
-// Just make sure all code paths are covered The compiler
-// does actually a much better job checking the result when
-// we mixin the code for some real tests in test.d ;-)
+/*
+ * Just make sure all code paths are covered The compiler
+ * does actually a much better job checking the result when
+ * we mixin the code for some real tests in test.d ;-)
+ */
 unittest
 {
     static abstract class TestAPI
@@ -92,7 +133,11 @@ unittest
     auto result = generateMethods!TestAPI;
 }
 
-template modName(T)
+/*
+ * Return module where a type is defined. For builting types
+ * return an empty string.
+ */
+private template modName(T)
 {
     static if (__traits(compiles, moduleName!T))
         enum modName = moduleName!T;
@@ -100,7 +145,12 @@ template modName(T)
         enum modName = "";
 }
 
-string generateImports(API)()
+/*
+ * Check all return and parameter types of the RPC functions in API
+ * and use modName to generate imports for the modules defining these
+ * types.
+ */
+private string generateImports(API)()
 {
     string result;
     int[string] modules;
@@ -138,9 +188,11 @@ string generateImports(API)()
     return result;
 }
 
-// Just make sure all code paths are covered. The compiler
-// does actually a much better job checking the result when
-// we mixin the code for some real tests in test.d ;-)
+/*
+ * Just make sure all code paths are covered The compiler
+ * does actually a much better job checking the result when
+ * we mixin the code for some real tests in test.d ;-)
+ */
 unittest
 {
     struct S
@@ -157,6 +209,12 @@ unittest
     auto result = generateImports!TestAPI;
 }
 
+/*
+ * Contains information about a pending RPC call. As the call is usually made in
+ * a different Fiber than the Fiber processing responses (readTask) we have
+ * to do some synchronization using _readyEvent. Can't use Mutexes as transferring
+ * lock ownership is not supported.
+ */
 private struct RPCRequest
 {
 private:
@@ -164,30 +222,53 @@ private:
     ManualEvent _readyEvent;
 
 public:
-    // If should throw an Exception
+    // If should throw an Exception on resume
     bool exception = false;
-    // Type of following response
+    // Type of following response (only error/result is allowed)
     ResponseType type;
 
+    // initialize this RPCRequest
     void initialize()
     {
         _readyEvent = createManualEvent();
     }
 
+    // Notify waitReady callers
     void emitReady()
     {
         _readyEvent.emit();
     }
 
+    // Wait for emitReady
     void waitReady()
     {
         _readyEvent.wait();
     }
 }
 
+/**
+ * This implements an RPC client for API.
+ * 
+ * The ConnectionInfo type is used to present information about the underlying
+ * connection to the user. To do this, RPCClient exposes the connectionInfo
+ * field of type ConnectionInfo.
+ *
+ * The client overrides all functions and events in API not marked with a
+ * IgnoreUDA attribute. It additionally provides an onDisconnect method which
+ * gets called when the connection gets disconnected locally or by the server.
+ *
+ * The disconnect method can be used to close the connection. The underlying
+ * stream still has to get closed manually.
+ *
+ * Note: Event handlers are called from the Task processing the results of calls.
+ * Because of this, event handlers may not directly call RPC methods. If you
+ * need to call a RPC method from an event handler, spawn a new Task using runTask
+ * first.
+ */
 class RPCClient(API, ConnectionInfo) : API
 {
 private:
+    // Underlying data connection
     Stream _stream;
     // Used to protect concurrent calls to callMethod
     TaskMutex _writeMutex;
@@ -207,11 +288,13 @@ private:
     // The pending call request
     RPCRequest _pending;
 
+    // We're processing a event/response, do not interleave by reading other responses
     void startRead()
     {
         _processingRead = true;
     }
 
+    // We've finished this response. Can now read next response.
     void finishRead()
     {
         _processingRead = false;
@@ -238,7 +321,8 @@ private:
     }
 
     /*
-     *
+     * Call remote method identified by name and mangle.
+     * Serialize parameters and results according to MethodType.
      */
     ReturnType!MethodType callMethod(MethodType)(string name, string mangle,
         Parameters!MethodType args)
@@ -314,6 +398,9 @@ private:
         }
     }
 
+    /*
+     * Received event from server. Call all registered event handlers.
+     */
     void emitEvent(string name)(EventMessage event)
     {
         alias EventType = ElementType!(typeof(__traits(getMember, typeof(this), name)));
@@ -338,6 +425,10 @@ private:
         }
     }
 
+    /*
+     * Read the EventMessage from the data stream and dispatch to
+     * emitEvent.
+     */
     void handleEventMessage()
     {
         scope (exit)
@@ -371,6 +462,12 @@ private:
         _stream.skipParameters(event.parameters);
     }
 
+    /*
+     * This task is the only task reading the underlying connection.
+     * Classify incoming messages as event/error/result and dispatch
+     * to handleEventMessage or transfer control to the Task which originally
+     * called the RPC method.
+     */
     void readTaskMain()
     {
         try
@@ -414,6 +511,9 @@ private:
         }
     }
 
+    /*
+     * Construct a new RPCClient.
+     */
     this(Stream stream, ConnectionInfo info)
     {
         connectionInfo = info;
@@ -428,6 +528,7 @@ private:
 
 public:
     mixin(generateImports!API);
+    /// This implements the methods in API
     mixin(generateMethods!API);
 
     /**
@@ -445,7 +546,7 @@ public:
     }
 
     /**
-     * Called when disconnected
+     * Called when disconnected.
      */
     Event!(RPCClient!(API, ConnectionInfo)) onDisconnect;
 
@@ -453,7 +554,7 @@ public:
      * Sends disconnect signal to remote server and stops internal tasks.
      * 
      * Note: Do not call any functions on this client instance after disconnecting.
-     * This does not close the underlying stream. Recommended usage patterns:
+     * This does not close the underlying stream. Recommended usage pattern:
      * -----------------------------
      * client.disconnect();
      * client.connectionInfo.close();

@@ -1,3 +1,9 @@
+/**
+ * Implements the RPC server.
+ *
+ * This contains lower level APIs, see vibe.rpcchannel.tcp
+ * and vibe.rpcchannel.noise for a simpler API.
+ */
 module vibe.rpcchannel.server;
 
 import std.traits;
@@ -13,7 +19,7 @@ import vibe.rpcchannel.base;
 import vibe.rpcchannel.protocol;
 
 /**
- * Whether a class can be used as an API server
+ * Whether a class can be used as an API server.
  */
 enum bool isServerAPI(T, ConnectionInfo) = is(typeof({
     T session = T.startSession(ConnectionInfo.init);
@@ -37,7 +43,7 @@ unittest
  * Creates a server session. Runs and blocks the current task.
  * 
  * Throws: Throws exceptions on unrecoverable errors. In such cases the caller
- * should close the connection.
+ * should close the underlying connection.
  */
 ServerSession!API createServerSession(Implementation, API, ConnectionInfo)(
     Stream stream, ConnectionInfo info) if (isServerAPI!(Implementation, ConnectionInfo))
@@ -47,18 +53,24 @@ ServerSession!API createServerSession(Implementation, API, ConnectionInfo)(
     return server;
 }
 
-/*
- *
+/**
+ * One instance of a client<->server communication server session.
  */
 class ServerSession(API)
 {
 private:
+    // The api implementation to call methods on
     API _api;
+    // Underlying transport stream
     Stream _stream;
     // Need to make sure result and events are not interleaved
     TaskMutex _writeMutex;
+    // The main task reading the _stream
     Task _runTask;
 
+    /*
+     * A recoverable error occured, send error response
+     */
     void sendError(CallMessage info, ErrorType type, string msg = "", string file = "",
         size_t line = 0)
     {
@@ -72,10 +84,12 @@ private:
     }
 
     /*
-         * Note: handles recoverable errors internally by sending an error
-         * to the remote client. Non-recoverable errors propagate as an
-         * Exception and should cause the connection to the client to terminate.
-         */
+     * We received a call reqest. Now read parameters and call the function.
+     *
+     * Note: handles recoverable errors internally by sending an error
+     * to the remote client. Non-recoverable errors propagate as an
+     * Exception and should cause the connection to the client to terminate.
+     */
     void callMethod(string member)(CallMessage info)
     {
         alias overloads = MemberFunctionsTuple!(API, member);
@@ -162,6 +176,9 @@ private:
         return;
     }
 
+    /*
+     * This is a call request. Search for the correct function to be called.
+     */
     void processCall()
     {
         auto info = _stream.deserializeJsonLine!CallMessage();
@@ -190,9 +207,11 @@ private:
     }
 
     /*
-         * Returns:
-         * false if remote send disconnect request.
-         */
+     * Check for current request type and the dispatch to processCall.
+     *
+     * Returns:
+     * false if remote send disconnect request.
+     */
     bool processRequest()
     {
         auto type = _stream.deserializeJsonLine!RequestType();
@@ -209,6 +228,10 @@ private:
         return true;
     }
 
+    /*
+     * Register a callback for the event named name.
+     * Once this event is called, send an EventMessage over the _stream.
+     */
     void registerEvent(string name)()
     {
         alias EventType = ElementType!(typeof(__traits(getMember, API, name)));
@@ -237,6 +260,9 @@ private:
         mixin(`_api.` ~ name ~ ` ~= &onEvent;`);
     }
 
+    /*
+     * Iterate all events in the _api and setup event handlers.
+     */
     void registerEvents()
     {
         foreach (member; __traits(derivedMembers, API))
@@ -254,8 +280,8 @@ private:
     }
 
     /*
-         * 
-         */
+     * Construct a new RPC server.
+     */
     this(API api, Stream stream)
     {
         _writeMutex = new TaskMutex();
@@ -265,9 +291,9 @@ private:
     }
 
     /*
-        * We were somehow disconnected. Clean up all tasks and notify waiting
-        * calls by throwing Exceptions.
-        */
+     * We were somehow disconnected. Clean up all tasks and notify waiting
+     * calls by throwing Exceptions.
+     */
     void shutdown() nothrow
     {
         if (_stream)
@@ -285,17 +311,20 @@ private:
 
 public:
     /**
-        * Whether client session is still connected.
-        * Note: This does not necessarily mean the underlying stream is closed.
-        */
+     * Whether client session is still connected.
+     * Note: This does not necessarily mean the underlying stream is closed.
+     */
     @property bool connected()
     {
         return _stream !is null;
     }
 
-    /*
-         * 
-         */
+    /**
+     * Run one server session.
+     * 
+     * This returns after a clean shutdown or throws an Exception if an error
+     * occured.
+     */
     void run()
     {
         _runTask = Task.getThis();
@@ -322,14 +351,14 @@ public:
     }
 
     /**
-        * Sends disconnect signal to remote server and stops internal tasks.
-        * 
-        * Note: Do not call any functions on this instance after disconnecting.
-        * Emitting further events will throw DisconnectedExceptions. The API instance
-        * will get destroy() ed.
-        *
-        * This does not close the underlying stream.
-        */
+     * Sends disconnect signal to remote server and stops internal tasks.
+     * 
+     * Note: Do not call any functions on this instance after disconnecting.
+     * Emitting further events will throw DisconnectedExceptions. The API instance
+     * will get destroy() ed.
+     *
+     * This does not close the underlying stream.
+     */
     void disconnect()
     {
         if (!connected)

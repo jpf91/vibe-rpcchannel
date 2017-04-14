@@ -1,0 +1,14 @@
+{
+    "name": "docpkg",
+    "dependencies": {
+        "vibe-d": "~>0.7.30",
+        "eventsystem": "~>1.2.0",
+        "vibe-noisestream": "~>0.1.1"
+    },
+    "targetType": "library",
+    "description": "Fake package used to build documentation",
+    "sourcePaths": [
+        "../noise/src",
+        "../src"
+    ]
+}

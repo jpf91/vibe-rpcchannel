@@ -8,7 +8,8 @@
         "eventsystem": "~>1.2.0"
     },
     "subPackages": [
-        "./noise"
+        "./noise",
+        "./docpkg"
     ],
     "targetType": "library",
     "description": "A vibe.d RPC library based on TCP connections",
