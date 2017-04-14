@@ -286,7 +286,7 @@ unittest
                 // Contains complete backtrace
                 assert(e.msg.canFind("A error message"));
                 assert(e.file.canFind("test.d"));
-                assert(e.line == 159);
+                assert(e.line == 160);
             }
 
             client.closeTCP();
