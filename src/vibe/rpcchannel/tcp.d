@@ -91,6 +91,7 @@ unittest
     {
         string someMethod(string name);
     }
+
     static class Implementation : API
     {
         static Implementation startSession(TCPConnection conn)

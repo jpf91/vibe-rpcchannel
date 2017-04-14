@@ -77,8 +77,8 @@ enum ErrorType
  */
 struct ErrorMessage
 {
-    uint id;  /// The request id repeated
-    ErrorType type;  /// Type of error
+    uint id; /// The request id repeated
+    ErrorType type; /// Type of error
 
     @optional string message; /// In debug mode only
     @optional string file; /// In debug mode only
