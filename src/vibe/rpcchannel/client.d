@@ -69,47 +69,36 @@ private string generateMethods(API)()
 
     string result;
 
-    foreach (member; __traits(derivedMembers, API))
+    foreach (member; APIFunctions!API)
     {
-        // Guards against private members
-        static if (__traits(compiles, __traits(getMember, API, member)))
+        foreach (MethodType; APIFunctionOverloads!(API, member))
         {
-            static if (isSomeFunction!(__traits(getMember, API, member))
-                    && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
-                    && !isSpecialFunction!member)
+            alias TParams = Parameters!MethodType;
+            alias TRet = ReturnType!MethodType;
+            enum mangle = typeof(MethodType).mangleof;
+
+            string code = "override " ~ TRet.stringof ~ " " ~ member ~ "(";
+            foreach (i, param; TParams)
             {
-                alias overloads = MemberFunctionsTuple!(API, member);
-
-                foreach (MethodType; overloads)
-                {
-                    alias TParams = Parameters!MethodType;
-                    alias TRet = ReturnType!MethodType;
-                    enum mangle = typeof(MethodType).mangleof;
-
-                    string code = "override " ~ TRet.stringof ~ " " ~ member ~ "(";
-                    foreach (i, param; TParams)
-                    {
-                        if (i != 0)
-                            code ~= ", ";
-                        code ~= param.stringof ~ " t" ~ to!string(i);
-                    }
-                    code ~= ")\n{\n";
-                    string call = "callMethod!(" ~ TRet.stringof ~ " function"
-                        ~ TParams.stringof ~ ")(\"" ~ member ~ "\", \"" ~ mangle ~ "\"";
-                    foreach (i, param; TParams)
-                    {
-                        call ~= ", t" ~ to!string(i);
-                    }
-                    call ~= ");";
-                    static if (is(TRet == void))
-                        code ~= "    " ~ call;
-                    else
-                        code ~= "    return " ~ call;
-                    code ~= "\n}\n\n";
-
-                    result ~= code;
-                }
+                if (i != 0)
+                    code ~= ", ";
+                code ~= param.stringof ~ " t" ~ to!string(i);
             }
+            code ~= ")\n{\n";
+            string call = "callMethod!(" ~ TRet.stringof ~ " function"
+                ~ TParams.stringof ~ ")(\"" ~ member ~ "\", \"" ~ mangle ~ "\"";
+            foreach (i, param; TParams)
+            {
+                call ~= ", t" ~ to!string(i);
+            }
+            call ~= ");";
+            static if (is(TRet == void))
+                code ~= "    " ~ call;
+            else
+                code ~= "    return " ~ call;
+            code ~= "\n}\n\n";
+
+            result ~= code;
         }
     }
 
@@ -155,28 +144,14 @@ private string generateImports(API)()
     string result;
     int[string] modules;
 
-    foreach (member; __traits(derivedMembers, API))
+    foreach (MethodType; APIOverloads!API)
     {
-        // Guards against private members
-        static if (__traits(compiles, __traits(getMember, API, member)))
-        {
-            static if (isSomeFunction!(__traits(getMember, API, member))
-                    && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
-                    && !isSpecialFunction!member)
-            {
-                alias overloads = MemberFunctionsTuple!(API, member);
+        alias TParams = Parameters!MethodType;
+        alias TRet = ReturnType!MethodType;
+        modules[modName!TRet] = 1;
 
-                foreach (MethodType; overloads)
-                {
-                    alias TParams = Parameters!MethodType;
-                    alias TRet = ReturnType!MethodType;
-                    modules[modName!TRet] = 1;
-
-                    foreach (Param; TParams)
-                        modules[modName!Param] = 1;
-                }
-            }
-        }
+        foreach (Param; TParams)
+            modules[modName!Param] = 1;
     }
 
     foreach (mod; modules.keys)
@@ -436,25 +411,17 @@ private:
 
         auto event = _stream.deserializeJsonLine!EventMessage();
 
-        foreach (member; __traits(derivedMembers, API))
+        foreach (member; APIEvents!API)
         {
-            // Guards against private members
-            static if (__traits(compiles, __traits(getMember, API, member)))
-            {
-                static if (isEmittable2!(typeof(__traits(getMember, API,
-                        member))) && !hasUDA!(__traits(getMember, API, member), IgnoreUDA))
-                {
-                    alias EventType = ElementType!(typeof(__traits(getMember, API,
-                        member)));
-                    alias TRet = ReturnType!EventType;
-                    alias TArgs = Parameters!EventType;
+            alias EventType = ElementType!(typeof(__traits(getMember, API,
+                member)));
+            alias TRet = ReturnType!EventType;
+            alias TArgs = Parameters!EventType;
 
-                    if (event.target == member && event.parameters == Parameters!(EventType).length)
-                    {
-                        emitEvent!member(event);
-                        return;
-                    }
-                }
+            if (event.target == member && event.parameters == Parameters!(EventType).length)
+            {
+                emitEvent!member(event);
+                return;
             }
         }
 

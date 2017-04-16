@@ -92,9 +92,7 @@ private:
      */
     void callMethod(string member)(CallMessage info)
     {
-        alias overloads = MemberFunctionsTuple!(API, member);
-
-        foreach (MethodType; overloads)
+        foreach (MethodType; APIFunctionOverloads!(API, member))
         {
             alias TParams = Parameters!MethodType;
             alias TRet = ReturnType!MethodType;
@@ -183,21 +181,12 @@ private:
     {
         auto info = _stream.deserializeJsonLine!CallMessage();
 
-        foreach (member; __traits(derivedMembers, API))
+        foreach (member; APIFunctions!API)
         {
-            // Guards against private members
-            static if (__traits(compiles, __traits(getMember, API, member)))
+            if (info.target == member)
             {
-                static if (isSomeFunction!(__traits(getMember, API, member))
-                        && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
-                        && !isSpecialFunction!member)
-                {
-                    if (info.target == member)
-                    {
-                        callMethod!(member)(info);
-                        return;
-                    }
-                }
+                callMethod!(member)(info);
+                return;
             }
         }
 
@@ -265,17 +254,9 @@ private:
      */
     void registerEvents()
     {
-        foreach (member; __traits(derivedMembers, API))
+        foreach (member; APIEvents!API)
         {
-            // Guards against private members
-            static if (__traits(compiles, __traits(getMember, API, member)))
-            {
-                static if (isEmittable2!(typeof(__traits(getMember, API,
-                        member))) && !hasUDA!(__traits(getMember, _api, member), IgnoreUDA))
-                {
-                    registerEvent!member;
-                }
-            }
+            registerEvent!member;
         }
     }
 

@@ -9,7 +9,7 @@ module vibe.rpcchannel.base;
 import vibe.core.stream;
 import vibe.core.sync;
 
-import std.traits;
+import std.traits, std.meta;
 import std.range : ElementType;
 
 import vibe.rpcchannel.protocol;
@@ -94,3 +94,92 @@ enum bool isEmittable2(T) = isArray!T && isDelegate!(ElementType!T)
 enum bool isSpecialFunction(string name) = name == "startSession"
         || name == "__dtor" || (name.length >= 6 && name[0 .. 5] == "__ctor"
         || name == "toHash" || name == "toString");
+
+/**
+ * Returns a tuple of overloads for function member in API
+ * which will be implemented by the RPC server and client.
+ */
+template APIFunctionOverloads(API, string member)
+{
+    alias APIFunctionOverloads = MemberFunctionsTuple!(API, member);
+}
+
+/**
+ * Returns a tuple of all overloads for all functions in API which will be
+ * implemented by the RPC server and client.
+ */
+template APIOverloads(API)
+{
+    enum derivedMembers = APIFunctions!API;
+    template OverloadMap(string member)
+    {
+        alias OverloadMap = APIFunctionOverloads!(API, member);
+    }
+
+    alias APIOverloads = staticMap!(OverloadMap, derivedMembers);
+}
+
+/**
+ * Returns a string tuple of all function members in API which will be
+ * implemented by the RPC server and client.
+ */
+template APIFunctions(API)
+{
+    enum derivedMembers = __traits(derivedMembers, API);
+
+    template isValidMember(string member)
+    {
+        // Guards against private members
+        static if (__traits(compiles, __traits(getMember, API, member)))
+        {
+            static if (isSomeFunction!(__traits(getMember, API, member))
+                       && !hasUDA!(__traits(getMember, API, member), IgnoreUDA)
+                       && !isSpecialFunction!member)
+            {
+                enum isValidMember = true;
+            }
+            else
+            {
+                enum isValidMember = false;
+            }
+        }
+        else
+        {
+            enum isValidMember = false;
+        }
+    }
+
+    alias APIFunctions = Filter!(isValidMember, derivedMembers);
+}
+
+/**
+ * Returns a string tuple of all event members in API which will be
+ * implemented by the RPC server and client.
+ */
+template APIEvents(API)
+{
+    enum derivedMembers = __traits(derivedMembers, API);
+
+    template isValidMember(string member)
+    {
+        // Guards against private members
+        static if (__traits(compiles, __traits(getMember, API, member)))
+        {
+            static if (isEmittable2!(typeof(__traits(getMember, API, member)))
+                       && !hasUDA!(__traits(getMember, API, member), IgnoreUDA))
+            {
+                enum isValidMember = true;
+            }
+            else
+            {
+                enum isValidMember = false;
+            }
+        }
+        else
+        {
+            enum isValidMember = false;
+        }
+    }
+
+    alias APIEvents = Filter!(isValidMember, derivedMembers);
+}
