@@ -2,6 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>http://127.0.0.1/index.html</loc></url>
 <url><loc>http://127.0.0.1/vibe/rpcchannel/base.html</loc></url>
+<url><loc>http://127.0.0.1/vibe/rpcchannel/base/APIEvents.html</loc></url>
+<url><loc>http://127.0.0.1/vibe/rpcchannel/base/APIFunctionOverloads.html</loc></url>
+<url><loc>http://127.0.0.1/vibe/rpcchannel/base/APIFunctions.html</loc></url>
+<url><loc>http://127.0.0.1/vibe/rpcchannel/base/APIOverloads.html</loc></url>
 <url><loc>http://127.0.0.1/vibe/rpcchannel/base/DisconnectedException.html</loc></url>
 <url><loc>http://127.0.0.1/vibe/rpcchannel/base/DisconnectedException.this.html</loc></url>
 <url><loc>http://127.0.0.1/vibe/rpcchannel/base/ignoreRPC.html</loc></url>

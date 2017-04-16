@@ -13,4 +13,12 @@ $('#symbolSearchPane').show();</script></div><ul class="tree-view"><li class="tr
 </td></tr><tr><td><a id="isSpecialFunction" class="["public"]" href="../../vibe/rpcchannel/base/isSpecialFunction.html"><code>isSpecialFunction</code></a></td><td></td><td>Checks whether name is the name of a special function which should be IgnoreUDA
  when generating RPC methods. Ignores <code class="lang-d"><span class="pln">startSession</span></code>, constructors, destructors,
  <code class="lang-d"><span class="pln">toHash</span></code> and <code class="lang-d"><span class="pln">toString</span></code>.
+</td></tr></table></section><section><h2>Aliases</h2><table><col class="caption"/><tr><th>Name</th><th>Type</th><th>Description</th></tr><tr><td><a id="APIEvents" class="["public"]" href="../../vibe/rpcchannel/base/APIEvents.html"><code>APIEvents</code></a></td><td><code class="prettyprint lang-d"><span class="typ">Filter</span>!(isValidMember,derivedMembers)</code></td><td>Returns a string tuple of all event members in API which will be
+ implemented by the RPC server and client.
+</td></tr><tr><td><a id="APIFunctionOverloads" class="["public"]" href="../../vibe/rpcchannel/base/APIFunctionOverloads.html"><code>APIFunctionOverloads</code></a></td><td><code class="prettyprint lang-d"><span class="typ">MemberFunctionsTuple</span>!(API,member)</code></td><td>Returns a tuple of overloads for function member in API
+ which will be implemented by the RPC server and client.
+</td></tr><tr><td><a id="APIFunctions" class="["public"]" href="../../vibe/rpcchannel/base/APIFunctions.html"><code>APIFunctions</code></a></td><td><code class="prettyprint lang-d"><span class="typ">Filter</span>!(isValidMember,derivedMembers)</code></td><td>Returns a string tuple of all function members in API which will be
+ implemented by the RPC server and client.
+</td></tr><tr><td><a id="APIOverloads" class="["public"]" href="../../vibe/rpcchannel/base/APIOverloads.html"><code>APIOverloads</code></a></td><td><code class="prettyprint lang-d"><span class="pln">staticMap</span>!(OverloadMap,derivedMembers)</code></td><td>Returns a tuple of all overloads for all functions in API which will be
+ implemented by the RPC server and client.
 </td></tr></table></section><footer><table class="license-info"><tr><th>Authors</th><td></td></tr><tr><th>Copyright</th><td></td></tr><tr><th>License</th><td></td></tr></table><p class="faint">Generated using the DDOX documentation generator</p></footer></div></body></html>
