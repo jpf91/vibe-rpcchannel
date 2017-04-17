@@ -14,5 +14,5 @@
     "targetType": "library",
     "description": "A vibe.d RPC library based on TCP connections",
     "copyright": "Copyright © 2017, Johannes Pfau",
-    "license": "BSL"
+    "license": "BSL-1.0"
 }
